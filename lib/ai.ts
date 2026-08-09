@@ -96,15 +96,53 @@ async function callPoYo(
 
   const data = await response.json();
 
-  // PoYo response format อาจต่างจาก OpenAI
-  // ลองหา text/content หลายที่
-  const content =
-    data.output_text ||
-    data.content ||
-    data.text ||
-    data.output?.[0]?.content?.[0]?.text ||
-    data.choices?.[0]?.message?.content ||
-    JSON.stringify(data);
+  // Debug: log response shape
+  console.log("PoYo response:", JSON.stringify(data).slice(0, 500));
+
+  // Extract text content - ลองหลาย format
+  let content: string = "";
+
+  if (typeof data === "string") {
+    content = data;
+  } else if (typeof data.output_text === "string") {
+    content = data.output_text;
+  } else if (typeof data.content === "string") {
+    content = data.content;
+  } else if (typeof data.text === "string") {
+    content = data.text;
+  } else if (Array.isArray(data.output)) {
+    // OpenAI-style: data.output[].content[].text
+    for (const item of data.output) {
+      if (item.content && Array.isArray(item.content)) {
+        for (const c of item.content) {
+          if (typeof c.text === "string") {
+            content += c.text;
+          }
+        }
+      } else if (typeof item.text === "string") {
+        content += item.text;
+      } else if (typeof item.content === "string") {
+        content += item.content;
+      }
+    }
+  } else if (Array.isArray(data.choices)) {
+    // OpenAI chat completion style
+    for (const c of data.choices) {
+      if (c.message?.content) {
+        content += typeof c.message.content === "string"
+          ? c.message.content
+          : JSON.stringify(c.message.content);
+      }
+    }
+  } else if (data.choices?.[0]?.message?.content) {
+    content = data.choices[0].message.content;
+  }
+
+  // ถ้ายังไม่ได้ content → log + throw
+  if (!content) {
+    console.error("Could not extract content from PoYo response:", JSON.stringify(data, null, 2));
+    throw new Error("PoYo response did not contain text content");
+  }
 
   return {
     content,
