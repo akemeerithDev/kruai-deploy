@@ -27,7 +27,6 @@ const DOC_LABELS: Record<string, string> = {
 
 export default function ResultPage() {
   const [data, setData] = useState<ResultData | null>(null);
-  const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState<string | null>(null);
 
   useEffect(() => {
@@ -37,13 +36,6 @@ export default function ResultPage() {
     }
   }, []);
 
-  const copyToClipboard = async () => {
-    if (!data) return;
-    await navigator.clipboard.writeText(data.content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   const safeFilename = (ext: string) => {
     if (!data) return `document.${ext}`;
     const label = DOC_LABELS[data.input.documentType] || data.input.documentType;
@@ -51,7 +43,7 @@ export default function ResultPage() {
     return `${label}-${topic}.${ext}`;
   };
 
-  const handleDownload = async (type: "pdf" | "docx" | "md") => {
+  const handleDownload = async (type: "pdf" | "docx") => {
     if (!data) return;
     setDownloading(type);
     try {
@@ -60,15 +52,6 @@ export default function ResultPage() {
         exportToPDF(data.content, filename);
       } else if (type === "docx") {
         await exportToDOCX(data.content, filename);
-      } else {
-        // md
-        const blob = new Blob([data.content], { type: "text/markdown;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
       }
     } catch (err) {
       console.error("Download error:", err);
@@ -109,29 +92,16 @@ export default function ResultPage() {
           </Link>
           <div className="flex items-center gap-2 flex-wrap">
             <button
-              onClick={copyToClipboard}
-              className="text-sm px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition"
-            >
-              {copied ? "✓ คัดลอกแล้ว" : "📋 คัดลอก"}
-            </button>
-            <button
-              onClick={() => handleDownload("md")}
-              disabled={downloading === "md"}
-              className="text-sm px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition disabled:opacity-50"
-            >
-              {downloading === "md" ? "..." : "📄 .md"}
-            </button>
-            <button
               onClick={() => handleDownload("docx")}
               disabled={downloading === "docx"}
-              className="text-sm px-3 py-1.5 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg font-medium transition disabled:opacity-50"
+              className="text-sm px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg font-semibold transition disabled:opacity-50 shadow-sm"
             >
-              {downloading === "docx" ? "⏳ กำลังโหลด..." : "📘 Word"}
+              {downloading === "docx" ? "⏳ กำลังโหลด..." : "📘 Word (.docx)"}
             </button>
             <button
               onClick={() => handleDownload("pdf")}
               disabled={downloading === "pdf"}
-              className="text-sm px-3 py-1.5 bg-gradient-to-r from-red-500 to-pink-500 text-white hover:opacity-90 rounded-lg font-medium transition disabled:opacity-50 shadow-sm"
+              className="text-sm px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white hover:opacity-90 rounded-lg font-semibold transition disabled:opacity-50 shadow-sm"
             >
               {downloading === "pdf" ? "⏳ กำลังโหลด..." : "📕 PDF"}
             </button>
