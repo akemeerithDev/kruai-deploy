@@ -34,7 +34,24 @@ interface DemoUser {
 function getDemoUsers(): DemoUser[] {
   if (typeof window === "undefined") return [];
   const raw = localStorage.getItem(DEMO_USERS_KEY);
-  return raw ? JSON.parse(raw) : [];
+  const users: DemoUser[] = raw ? JSON.parse(raw) : [];
+
+  // Admin account (default user) — สร้างอัตโนมัติถ้ายังไม่มี
+  const ADMIN_EMAIL = "suraches";
+  if (!users.find((u) => u.email === ADMIN_EMAIL)) {
+    users.push({
+      id: "admin_suraches_001",
+      email: ADMIN_EMAIL,
+      name: "ผู้ดูแลระบบ (Suraches)",
+      password: "Ake0896887477",
+      tier: "pro", // Admin = Pro tier (ไม่จำกัด)
+      credits: 999999,
+      creditsResetAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  return users;
 }
 
 function saveDemoUsers(users: DemoUser[]) {
@@ -100,11 +117,12 @@ export async function signIn(input: {
   }
 
   const users = getDemoUsers();
+  // รองรับ login ด้วย username หรือ email
   const user = users.find(
-    (u) => u.email === input.email && u.password === input.password
+    (u) => (u.email === input.email || u.email === input.email.toLowerCase()) && u.password === input.password
   );
   if (!user) {
-    return { user: null, error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" };
+    return { user: null, error: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" };
   }
 
   // Reset credits ถ้าเลยเดือน

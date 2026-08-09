@@ -54,23 +54,36 @@ export default function AuthPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
+    <main className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Decorative blobs */}
+      <div className="fixed top-0 right-0 w-96 h-96 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30" />
+      <div className="fixed bottom-0 left-0 w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30" />
+
+      <div className="max-w-md w-full relative z-10">
         <Link href="/" className="flex items-center gap-2 justify-center mb-6">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white text-2xl">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center text-white text-3xl shadow-lg">
             📒
           </div>
           <div>
-            <div className="font-bold text-2xl text-primary-900">KruAI</div>
+            <div className="font-extrabold text-2xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              KruAI
+            </div>
           </div>
         </Link>
 
-        <div className="card">
+        <div className="card bg-white/90 backdrop-blur-md shadow-2xl">
+          <h1 className="text-2xl font-extrabold text-center mb-1">
+            {mode === "signin" ? "ยินดีต้อนรับกลับมา! 👋" : "สร้างบัญชีใหม่ ✨"}
+          </h1>
+          <p className="text-center text-gray-500 text-sm mb-6">
+            {mode === "signin" ? "เข้าสู่ระบบเพื่อใช้งานต่อ" : "เริ่มต้นใช้งานฟรี ไม่ต้องบัตรเครดิต"}
+          </p>
+
           {/* Tabs */}
           <div className="flex border-b border-gray-200 mb-6">
             <button
               onClick={() => setMode("signin")}
-              className={`flex-1 py-3 font-semibold ${
+              className={`flex-1 py-3 font-semibold transition ${
                 mode === "signin"
                   ? "text-primary-600 border-b-2 border-primary-600"
                   : "text-gray-500 hover:text-gray-700"
@@ -80,7 +93,7 @@ export default function AuthPage() {
             </button>
             <button
               onClick={() => setMode("signup")}
-              className={`flex-1 py-3 font-semibold ${
+              className={`flex-1 py-3 font-semibold transition ${
                 mode === "signup"
                   ? "text-primary-600 border-b-2 border-primary-600"
                   : "text-gray-500 hover:text-gray-700"
@@ -105,11 +118,11 @@ export default function AuthPage() {
               </div>
             )}
             <div>
-              <label className="label-field">อีเมล</label>
+              <label className="label-field">อีเมล / Username</label>
               <input
-                type="email"
+                type="text"
                 className="input-field"
-                placeholder="you@school.ac.th"
+                placeholder="you@school.ac.th หรือ username"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
@@ -148,7 +161,7 @@ export default function AuthPage() {
             </button>
           </form>
 
-          <div className="mt-4 text-center">
+          <div className="mt-4 text-center space-y-2">
             <button
               type="button"
               onClick={useDemoAccount}
@@ -156,6 +169,11 @@ export default function AuthPage() {
             >
               🎲 ใช้บัญชีทดสอบ (สุ่มข้อมูล)
             </button>
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg p-3 text-xs text-left">
+              <div className="font-semibold text-amber-800 mb-1">👤 บัญชี Admin (ทดสอบ):</div>
+              <div className="text-amber-700">Username: <code className="bg-white px-1.5 py-0.5 rounded font-mono">suraches</code></div>
+              <div className="text-amber-700">Password: <code className="bg-white px-1.5 py-0.5 rounded font-mono">Ake0896887477</code></div>
+            </div>
           </div>
         </div>
 
