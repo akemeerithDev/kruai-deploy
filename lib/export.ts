@@ -45,7 +45,46 @@ export async function exportToDOCX(
     const block = blocks[i];
     const nextBlock = blocks[i + 1];
 
-    if (block.type === "h1") {
+    if (block.type === "h1_multiline") {
+      // H1 พร้อม 4 บรรทัด header (สำหรับแผนการสอน) — 36pt Bold Center
+      // บรรทัดแรก (ชื่อเรื่อง) = 36pt Bold
+      // บรรทัดถัดไป = 16pt regular
+      const lines = block.text.split("\n");
+      const title = lines[0];
+      const subLines = lines.slice(1);
+
+      children.push(
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 360, after: 120, line: 360 },
+          children: [
+            new TextRun({
+              text: title,
+              font: FONT_NAME,
+              size: SIZE_HEADING1,
+              bold: true,
+            }),
+          ],
+        })
+      );
+
+      for (const sub of subLines) {
+        if (!sub.trim()) continue;
+        children.push(
+          new Paragraph({
+            alignment: AlignmentType.LEFT,
+            spacing: { line: 360 },
+            children: [
+              new TextRun({
+                text: sub,
+                font: FONT_NAME,
+                size: SIZE_BODY,
+              }),
+            ],
+          })
+        );
+      }
+    } else if (block.type === "h1") {
       // หัวเรื่องใหญ่ — 36pt Bold Center + page break ก่อน (ยกเว้นอันแรก)
       if (children.length > 0) {
         children.push(
@@ -343,10 +382,10 @@ function escapeHtml(text: string): string {
 }
 
 // ============== Markdown → Blocks (สำหรับทั้ง DOCX + HTML) ==============
-type BlockType = "h1" | "h2" | "h3" | "h4" | "p" | "empty" | "divider" | "table";
+type BlockType = "h1" | "h1_multiline" | "h2" | "h3" | "h4" | "p" | "empty" | "divider" | "table";
 type Block = { type: BlockType; text: string; rows?: string[][] };
 
-function parseMarkdownToBlocks(content: string): Block[] {
+export function parseMarkdownToBlocks(content: string): Block[] {
   const lines = content.split("\n");
   const blocks: Block[] = [];
   let i = 0;
@@ -355,7 +394,20 @@ function parseMarkdownToBlocks(content: string): Block[] {
     const line = lines[i];
 
     if (line.startsWith("# ")) {
-      blocks.push({ type: "h1", text: stripMarkdown(line.replace("# ", "")) });
+      // H1: รวม 4 บรรทัดถัดไปที่ไม่ใช่ # (สำหรับแผนการสอน)
+      const h1Lines: string[] = [stripMarkdown(line.replace("# ", ""))];
+      let j = i + 1;
+      // เก็บบรรทัดที่ไม่ว่าง และไม่ขึ้นต้นด้วย # ให้รวมเป็นส่วนหนึ่งของ H1
+      while (j < lines.length && h1Lines.length < 5) {
+        const next = lines[j];
+        if (next.trim() === "") break;
+        if (next.startsWith("#")) break;
+        h1Lines.push(next);
+        j++;
+      }
+      blocks.push({ type: "h1_multiline", text: h1Lines.join("\n") });
+      i = j;
+      continue;
     } else if (line.startsWith("## ")) {
       blocks.push({ type: "h2", text: stripMarkdown(line.replace("## ", "")) });
     } else if (line.startsWith("### ")) {
@@ -371,7 +423,6 @@ function parseMarkdownToBlocks(content: string): Block[] {
       const tableRows: string[][] = [];
       while (i < lines.length && lines[i].trim().startsWith("|") && lines[i].trim().endsWith("|")) {
         const currentLine = lines[i].trim();
-        // ข้ามบรรทัด separator (|---|---|)
         if (/^\|[\s\-:|]+\|$/.test(currentLine)) {
           i++;
           continue;
@@ -383,7 +434,7 @@ function parseMarkdownToBlocks(content: string): Block[] {
         tableRows.push(cells);
         i++;
       }
-      i--; // ย้อนกลับ 1 เพราะ loop จะเพิ่มอีก
+      i--;
       blocks.push({ type: "table", text: "", rows: tableRows });
     } else {
       blocks.push({ type: "p", text: line });
